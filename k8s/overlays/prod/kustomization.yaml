@@ -6,7 +6,7 @@ components:
   - ../../components/monitoring
 images:
   - name: nlp-api
-    newName: ghcr.io/OWNER/nlp-k8s-platform    # <- replace OWNER with your GitHub username
+    newName: newName: ghcr.io/maielshazlyy/nlp-k8s-platform
     newTag: "1.0.0"
 patches:
   - target: {kind: HorizontalPodAutoscaler, name: nlp-api}
