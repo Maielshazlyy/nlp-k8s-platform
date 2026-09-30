@@ -7,11 +7,11 @@ permissions:
   contents: read
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}
+  IMAGE: ghcr.io/maielshazlyy/nlp-k8s-platform
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,7 +20,7 @@ jobs:
       - run: cd api && ruff check . && pytest -q
 
   manifests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install kubeconform
@@ -40,7 +40,7 @@ jobs:
 
   e2e:
     needs: [test, manifests]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: helm/kind-action@v1
@@ -75,7 +75,7 @@ jobs:
   publish:
     if: github.event_name == 'push'
     needs: [e2e]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {contents: read, packages: write, security-events: write}
     steps:
       - uses: actions/checkout@v4
@@ -87,7 +87,7 @@ jobs:
         with:
           images: ${{ env.IMAGE }}
           tags: |
-            type=sha
+            type=sha,format=long
             type=semver,pattern={{version}}
             type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v6
@@ -100,12 +100,15 @@ jobs:
           cache-to: type=gha,mode=max
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
           image-ref: ${{ env.IMAGE }}:sha-${{ github.sha }}
           format: sarif
           output: trivy.sarif
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-      - uses: github/codeql-action/upload-sarif@v3
-        if: always()
+      - uses: github/codeql-action/upload-sarif@v4
+        if: hashFiles('trivy.sarif') != ''
         with: {sarif_file: trivy.sarif}
