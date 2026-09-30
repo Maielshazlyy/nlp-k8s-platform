@@ -53,9 +53,14 @@ jobs:
         run: |
           kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.11.2/deploy/static/provider/kind/deploy.yaml
           kubectl -n ingress-nginx wait --for=condition=ready pod -l app.kubernetes.io/component=controller --timeout=180s
+          kubectl -n ingress-nginx wait --for=condition=complete job -l app.kubernetes.io/component=admission-webhook --timeout=120s
       - name: Deploy ci overlay
         run: |
-          kubectl apply -k k8s/overlays/ci
+          for i in 1 2 3 4 5 6; do
+            kubectl apply -k k8s/overlays/ci && break
+            [ "$i" = 6 ] && exit 1
+            echo "webhook not ready yet, retry $i"; sleep 10
+          done
           kubectl -n nlp rollout status deploy/nlp-api --timeout=180s
           kubectl -n nlp rollout status deploy/redis --timeout=120s
       - name: Smoke test
