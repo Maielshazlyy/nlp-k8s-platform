@@ -1,0 +1,42 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: nlp-api
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: nlp-api.slo
+      rules:
+        - record: nlp:http_error_ratio:rate5m
+          expr: |
+            sum(rate(http_requests_total{namespace="nlp",status=~"5.."}[5m]))
+              / clamp_min(sum(rate(http_requests_total{namespace="nlp"}[5m])), 1e-9)
+        - alert: NlpApiHighErrorRate
+          expr: nlp:http_error_ratio:rate5m > 0.02
+          for: 5m
+          labels: {severity: page}
+          annotations:
+            summary: "NLP API 5xx ratio above 2% for 5 minutes"
+        - alert: NlpApiHighLatencyP95
+          expr: |
+            histogram_quantile(0.95,
+              sum by (le) (rate(http_request_duration_seconds_bucket{namespace="nlp",route="/v1/sentiment"}[5m]))) > 1
+          for: 10m
+          labels: {severity: ticket}
+          annotations:
+            summary: "p95 latency of /v1/sentiment above 1s"
+        - alert: NlpApiLowCacheHitRatio
+          expr: |
+            sum(rate(nlp_cache_hits_total[15m]))
+              / clamp_min(sum(rate(nlp_cache_hits_total[15m])) + sum(rate(nlp_cache_misses_total[15m])), 1e-9) < 0.1
+          for: 30m
+          labels: {severity: info}
+          annotations:
+            summary: "Cache hit ratio below 10% for 30m; is Redis reachable?"
+        - alert: NlpApiNotEnoughReplicas
+          expr: kube_deployment_status_replicas_available{namespace="nlp",deployment="nlp-api"} < 2
+          for: 5m
+          labels: {severity: page}
+          annotations:
+            summary: "Fewer than 2 nlp-api replicas available"

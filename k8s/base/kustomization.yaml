@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: nlp
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - redis.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - hpa.yaml
+  - pdb.yaml
+  - ingress.yaml
+  - networkpolicies.yaml
+labels:
+  - pairs: {app.kubernetes.io/part-of: nlp-k8s-platform}
+    includeSelectors: false
+# Hash-suffixed ConfigMap => any config change triggers a rolling restart.
+configMapGenerator:
+  - name: nlp-api-config
+    literals:
+      - MODEL_BACKEND=hf
+      - MODEL_NAME=distilbert-base-uncased-finetuned-sst-2-english
+      - REDIS_URL=redis://redis:6379/0
+      - CACHE_TTL_SECONDS=3600
+      - MAX_CONCURRENT_INFERENCES=2
+      - LOG_LEVEL=INFO

@@ -1,0 +1,11 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: nlp-api
+  labels:
+    release: kube-prometheus-stack   # must match your Prometheus serviceMonitorSelector
+spec:
+  selector:
+    matchLabels: {app.kubernetes.io/name: nlp-api}
+  endpoints:
+    - {port: http, path: /metrics, interval: 15s}

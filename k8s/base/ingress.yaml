@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nlp-api
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+    nginx.ingress.kubernetes.io/limit-rps: "20"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: nlp.localtest.me        # resolves to 127.0.0.1, no /etc/hosts edit needed
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: {name: nlp-api, port: {name: http}}
