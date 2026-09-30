@@ -64,7 +64,7 @@ jobs:
           kubectl -n nlp rollout status deploy/nlp-api --timeout=180s
           kubectl -n nlp rollout status deploy/redis --timeout=120s
       - name: Smoke test
-        run: ./scripts/smoke-test.sh
+        run: bash scripts/smoke-test.sh
       - name: Dump cluster state on failure
         if: failure()
         run: |
