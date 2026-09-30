@@ -2,7 +2,7 @@
 # WITH_ML=true  -> production image, model weights baked in (no runtime download, offline-safe)
 # WITH_ML=false -> slim image used by CI e2e together with MODEL_BACKEND=mock
 
-FROM python:3.11-slim AS builder
+FROM python:3.14-slim AS builder
 ARG WITH_ML=true
 ARG MODEL_NAME=distilbert-base-uncased-finetuned-sst-2-english
 ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 HF_HOME=/models
@@ -15,7 +15,7 @@ RUN pip install -r requirements.txt \
 RUN mkdir -p /models && if [ "$WITH_ML" = "true" ]; then \
       python -c "from transformers import pipeline; pipeline('sentiment-analysis', model='${MODEL_NAME}')"; fi
 
-FROM python:3.11-slim
+FROM python:3.14-slim
 ARG WITH_ML=true
 LABEL org.opencontainers.image.source="https://github.com/OWNER/nlp-k8s-platform" \
       org.opencontainers.image.description="NLP sentiment inference API"
